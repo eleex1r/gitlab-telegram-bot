@@ -1,5 +1,7 @@
 import os
+import logging
 import telegram
+from typing import Tuple
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -7,15 +9,20 @@ ALLOWED_EVENTS = os.getenv("ALLOWED_EVENTS", "").split(',')
 
 bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
 
-def process_event(event, data):
-    """ Определяет, какое событие обрабатывать """
-    if event == "Pipeline Hook":
-        return handle_pipeline(data)
-    elif event == "Merge Request Hook":
-        return handle_merge_request(data)
-    elif event == "Push Hook":
-        return handle_push(data)
-    return "Unknown event", 400
+def process_event(event, data) -> Tuple[str, int]:
+    try:
+        logging.info(f"Processing event: {event}")
+        if event == "Pipeline Hook":
+            return handle_pipeline(data)
+        elif event == "Merge Request Hook":
+            return handle_merge_request(data)
+        elif event == "Push Hook":
+            return handle_push(data)
+        logging.warning(f"Unknown event type: {event}")
+        return "Unknown event", 400
+    except Exception as e:
+        logging.error(f"Error processing event: {str(e)}")
+        return f"Error: {str(e)}", 500
 
 def handle_pipeline(data):
     """ Обработка событий CI/CD """
@@ -70,6 +77,11 @@ def handle_push(data):
     send_telegram_message(message)
     return "OK", 200
 
-def send_telegram_message(message):
-    """ Отправка сообщения в Telegram """
-    bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message, parse_mode="Markdown")
+def send_telegram_message(message: str) -> None:
+    try:
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, 
+                        text=message, 
+                        parse_mode="Markdown")
+    except Exception as e:
+        logging.error(f"Failed to send Telegram message: {str(e)}")
+        raise
