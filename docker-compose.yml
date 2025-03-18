@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  gitlab_bot:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - TELEGRAM_BOT_TOKEN=your_token
+      - TELEGRAM_CHAT_ID=your_chat_id
+      - FLASK_ENV=production
